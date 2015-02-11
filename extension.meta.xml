@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension id="google_api" status="released" xmlns="http://symphony-cms.com/schemas/extension/1.0">
+	<name>Google API</name>
+	<description>An extension allowing you to connect with the Google API</description>
+	<repo type="github">https://github.com/jonmifsud/google_api</repo>
+	<types>
+		<type>Third Party Integration</type>
+	</types>
+	<authors>
+		<author>
+			<name github="jonmifsud" symphony="gunglien">Jon Mifsud</name>
+			<website>http://jonmifsud.com</website>
+		</author>
+	</authors>
+	<releases>
+		<release version="0.1" date="2015-02-11" min="2.5.2">
+			- Initial Release
+		</release>
+	</releases>
+</extension>
