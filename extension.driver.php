@@ -81,7 +81,7 @@
 					$div->appendChild($label);
 			$group->appendChild($div);
 
-			if (Symphony::Configuration()->get('client_id', "google_api") && !(Symphony::Configuration()->get('token', "google_api")) ){
+			if (Symphony::Configuration()->get('client_id', "google_api") && !(Symphony::Configuration()->get('token', "google_api")) || true ){
 				$client = $this->getClient();
 				$authUrl = $client->createAuthUrl();
 
@@ -97,7 +97,7 @@
 		/*------------------------------------------------------------------------------------------------*/
 
 
-    	public function getClient($scope=null){
+    	public function getClient($scope=null,$withToken = true){
 
     		if (!isset($scope)) 
     			$scope = explode(',',Symphony::Configuration()->get('scope', "google_api"));
@@ -111,12 +111,13 @@
 			$client->setClientSecret(Symphony::Configuration()->get('secret', "google_api"));
 			$client->setRedirectUri('http://dev.forward.com/symphony/extension/google_api/auth/');
 			// $client->setRedirectUri(SYMPHONY_URL . '/extension/google_api/auth/');
-			$client->setDeveloperKey(Symphony::Configuration()->get('developer_key', "google_api"));
-			$client->setScopes($scope);
+			// $client->setDeveloperKey(Symphony::Configuration()->get('developer_key', "google_api"));
 			$client->setAccessType('offline');
 
 			//if token exists
-			$client->setAccessToken(Symphony::Configuration()->get('token', "google_api"));
+			if($withToken){
+				$client->setAccessToken(Symphony::Configuration()->get('token', "google_api"));
+			}
 
 			return $client;
     	}
