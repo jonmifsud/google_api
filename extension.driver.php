@@ -103,6 +103,7 @@
     			$scope = explode(',',Symphony::Configuration()->get('scope', "google_api"));
 
     		$client = new Google_Client();
+    		$client->setScopes($scope);
 			$client->setApplicationName('Symphony Google API');
 
 			// Visit https://console.developers.google.com/ to generate your
