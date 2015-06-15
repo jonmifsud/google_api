@@ -10,7 +10,7 @@ class Google_AnalyticsDatasource extends DataSource
     public $dsParamSORT = 'pageviews';
     public $dsParamORDER = 'desc';
     public $dsParamSOURCE = 0;
-    public $dsParamPROFILEID = '97615465';
+    public $dsParamPROFILEID = '14710162';
     public $dsParamSTARTDATE = '-7 day';
     public $dsParamENDDATE = 'today';
 
@@ -43,7 +43,101 @@ class Google_AnalyticsDatasource extends DataSource
         return false;
     }
 
-    public function execute(&$param_pool)
+    /**
+     * Given either the Datasource object or an array of settings for a
+     * Remote Datasource, this function will return it's cache ID, which
+     * is stored in tbl_cache.
+     *
+     * @since 1.1
+     * @param array|object $settings
+     */
+    public static function buildCacheID($settings)
+    {
+        $cache_id = null;
+
+        $paramstring = '';
+        foreach($settings as $key => $value) {
+           if (strpos($key,'dsParam') === 0){
+                $paramstring .= $value;
+           }
+        }
+        $cache_id = md5($paramstring);
+
+        return $cache_id;
+    }
+    /**
+     * Helper function to build Cache information block
+     *
+     * @param XMLElement $wrapper
+     * @param Cacheable $cache
+     * @param string $cache_id
+     */
+    public static function buildCacheInformation(XMLElement $wrapper, Cacheable $cache, $cache_id)
+    {
+        $cachedData = $cache->read($cache_id);
+        if (is_array($cachedData) && !empty($cachedData) && (time() < $cachedData['expiry'])) {
+            $a = Widget::Anchor(__('Clear now'), SYMPHONY_URL . getCurrentPage() . 'clear_cache/');
+            $wrapper->appendChild(
+                new XMLElement('p', __('Cache expires in %d minutes. %s', array(
+                    ($cachedData['expiry'] - time()) / 60,
+                    $a->generate(false)
+                )), array('class' => 'help'))
+            );
+        } else {
+            $wrapper->appendChild(
+                new XMLElement('p', __('Cache has expired or does not exist.'), array('class' => 'help'))
+            );
+        }
+    }
+
+    public function execute(&$param_pool){
+        $result = new XMLElement($this->dsParamROOTELEMENT);
+
+        try {
+            // Check for an existing Cache for this Datasource
+            $cache_id = self::buildCacheID($this);
+            $cache = Symphony::ExtensionManager()->getCacheProvider('google_api');
+            $cachedData = $cache->read($cache_id);
+            $writeToCache = null;
+            $isCacheValid = true;
+            $creation = DateTimeObj::get('c');
+            // Execute if the cache doesn't exist, or if it is old.
+            if (
+                (!is_array($cachedData) || empty($cachedData)) // There's no cache.
+                || (time() - $cachedData['creation']) > ($this->dsParamCACHE * 60) // The cache is old.
+            ) {
+                if (Mutex::acquire($cache_id, $this->dsParamTIMEOUT, TMP)) {
+                    $result = self::getResults($param_pool);
+                    Mutex::release($cache_id, TMP);
+                }
+            } else {
+                $data = trim($cachedData['data']);
+                $creation = DateTimeObj::get('c', $cachedData['creation']);
+            }
+
+            if (is_array($cachedData) && !empty($cachedData) && $writeToCache === false) {
+                $data = trim($cachedData['data']);
+                $isCacheValid = false;
+                $creation = DateTimeObj::get('c', $cachedData['creation']);
+                if (empty($data)) {
+                    $this->_force_empty_result = true;
+                }
+            }
+
+            $result->setAttribute('status', ($isCacheValid === true ? 'fresh' : 'stale'));
+            $result->setAttribute('cache-id', $cache_id);
+            $result->setAttribute('creation', $creation);
+        } catch (Exception $e) {
+            $result->appendChild(new XMLElement('error', $e->getMessage()));
+        }
+        if ($this->_force_empty_result) {
+            $result = $this->emptyXMLSet();
+        }
+
+    }
+
+
+    public function getResults(&$param_pool)
     {
 
         $client = ExtensionManager::create('google_api')->getClient();
