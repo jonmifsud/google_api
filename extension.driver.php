@@ -4,9 +4,14 @@
 
 	Class extension_google_api extends Extension {
 
-		var $credentialsPath = MANIFEST . '/google_credentials.json';
-		var $secretPath = MANIFEST . '/google_client_secret.json';
+		var $credentialsPath;
+		var $secretPath;
 		var $scopes;
+
+		function __construct(){
+			$this->credentialsPath = MANIFEST . '/google_credentials.json';
+			$this->secretPath = MANIFEST . '/google_client_secret.json';
+		}
 		
 		/*------------------------------------------------------------------------------------------------*/
 		/*  Delegates  */
