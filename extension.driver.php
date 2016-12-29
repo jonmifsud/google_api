@@ -92,9 +92,14 @@
 					$accessToken = json_decode(file_get_contents($this->credentialsPath), true);
 					$client->setAccessToken($accessToken);
 
-					if ($client->isAccessTokenExpired()) {
+					if ($client->isAccessTokenExpired() || true) {
+						$refreshTokenSaved = $client->getRefreshToken(); 
 						$client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-						file_put_contents($this->credentialsPath, json_encode($client->getAccessToken()));
+
+						$accessTokenUpdated = $client->getAccessToken();
+						$accessTokenUpdated['refresh_token'] = $refreshTokenSaved;
+
+						file_put_contents($this->credentialsPath, json_encode($accessTokenUpdated));
 					}
 				} 
 				// $client->setAccessToken(Symphony::Configuration()->get('token', "google_api"));
